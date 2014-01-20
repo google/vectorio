@@ -3,6 +3,7 @@ package syscalliovec
 import (
 	"bytes"
 	"io/ioutil"
+	"net"
 	"os"
 	"syscall"
 	"testing"
@@ -66,4 +67,54 @@ func TestWritev(t *testing.T) {
 		t.Errorf("contents of file don't match input, %s != %s", fromdisk, should)
 	}
 	os.Remove("testwritev")
+}
+
+func TestWritevSocket(t *testing.T) {
+	go func() {
+		ln, err := net.Listen("tcp", "127.0.0.1:9999")
+		if err != nil {
+			t.Errorf("could not listen on 127.0.0.1:9999: %s", err)
+		}
+
+		conn, err := ln.Accept()
+		if err != nil {
+			t.Errorf("could not accept conn: %s", err)
+		}
+		defer conn.Close()
+
+		buf := make([]byte, 9)
+		nr, err := conn.Read(buf)
+		if nr != len(buf) {
+			t.Errorf("read was wrong length: %d != %d", nr, len(buf))
+		}
+
+		good := []byte("foobarbaz")
+		if bytes.Compare(buf, good) != 0 {
+			t.Errorf("read got wrong data: %s != %s", buf, good)
+		} else {
+			t.Logf("read got correct data: %s == %s", buf, good)
+		}
+	}()
+
+	conn, err := net.DialTCP("tcp4", nil, "127.0.0.1:9999")
+	if err != nil {
+		t.Errorf("error connecting to 127.0.0.1:9999: %s", err)
+	}
+	defer conn.Close()
+	data := [][]byte{[]byte("foo"), []byte("bar"), []byte("baz")}
+
+	f, err := conn.File()
+	if err != nil {
+		t.Errorf("could not get file handle for TCP client: %s", err)
+	}
+	defer f.Close()
+	nw, err := Writev(f, data)
+	f.Seek(0, 0)
+	if err != nil {
+		t.Errorf("WritevRaw threw error: %s", err)
+	}
+
+	if nw != 9 {
+		t.Errorf("Length %d of input does not match %d written bytes", len(data), nw)
+	}
 }
