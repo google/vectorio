@@ -7,6 +7,7 @@ import (
 	"os"
 	"syscall"
 	"testing"
+	"time"
 )
 
 func TestWritevRaw(t *testing.T) {
@@ -96,9 +97,13 @@ func TestWritevSocket(t *testing.T) {
 		}
 	}()
 
-	conn, err := net.DialTCP("tcp4", nil, "127.0.0.1:9999")
+	time.Sleep(1 * time.Second)
+	addr, _ := net.ResolveTCPAddr("tcp4", "127.0.0.1:9999")
+	conn, err := net.DialTCP("tcp4", nil, addr)
 	if err != nil {
 		t.Errorf("error connecting to 127.0.0.1:9999: %s", err)
+	} else {
+		t.Logf("connected to server")
 	}
 	defer conn.Close()
 	data := [][]byte{[]byte("foo"), []byte("bar"), []byte("baz")}
@@ -116,5 +121,8 @@ func TestWritevSocket(t *testing.T) {
 
 	if nw != 9 {
 		t.Errorf("Length %d of input does not match %d written bytes", len(data), nw)
+	} else {
+		t.Logf("right number of bytes written")
 	}
+	time.Sleep(1 * time.Second)
 }
