@@ -66,9 +66,9 @@ func (bw *BufferedWritev) WriteIovec(iov syscall.Iovec) (err error) {
 
 // public interface; wraps flush() in a lock
 func (bw *BufferedWritev) Flush() (err error) {
-	//bw.lock.Lock()
+	bw.lock.Lock()
 	err = bw.flush()
-	//bw.lock.Unlock()
+	bw.lock.Unlock()
 	return
 }
 
