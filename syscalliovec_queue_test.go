@@ -18,7 +18,7 @@ func TestBufferedWritev(t *testing.T) {
 	data := []byte("foobarbaz")
 	data_desired := []byte("foobazbar")
 
-	bw := NewBufferedWritevFile(f)
+	bw, _ := NewBufferedWritev(f)
 
 	bw.WriteIovec(syscall.Iovec{&data[0], 3})
 	bw.WriteIovec(syscall.Iovec{&data[6], 3})
@@ -59,7 +59,7 @@ func TestBufferedWritevHuge(t *testing.T) {
 	data := []byte("foobarba")
 	final := []byte("attheend")
 
-	bw := NewBufferedWritevFile(f)
+	bw, _ := NewBufferedWritev(f)
 
 	// write a little more than our buffer size
 	for i := 0; i < 1024; i++ {

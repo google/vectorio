@@ -1,6 +1,7 @@
 package syscalliovec
 
 import (
+	"errors"
 	"net"
 	"os"
 	"sync"
@@ -21,25 +22,25 @@ type BufferedWritev struct {
 	fd   uintptr
 }
 
-// Make a new BufferedWritev from a net.TCPConn (null if err)
-func NewBufferedWritevTCPConn(tcp *net.TCPConn) (bw *BufferedWritev, err error) {
-	f, err := tcp.File()
-	if err != nil {
-		return
+// Make a new BufferedWritev from a net.TCPConn, os.File, or file descriptor (FD).
+func NewBufferedWritev(target_in interface{}) (bw *BufferedWritev, err error) {
+	switch target := target_in.(type) {
+	case *net.TCPConn:
+		var f *os.File
+		f, err = target.File()
+		if err != nil {
+			return
+		}
+		bw, err = NewBufferedWritev(f)
+	case *os.File:
+		bw, err = NewBufferedWritev(uintptr(target.Fd()))
+	case uintptr:
+		// refactor: make buffer size user-specified?
+		bw = &BufferedWritev{buf: make([]syscall.Iovec, 0, defaultBufSize), lock: new(sync.Mutex), fd: target}
+	default:
+		err = errors.New("NewBufferedWritev called with invalid type")
 	}
-	bw = NewBufferedWritevFile(f)
 	return
-}
-
-// Make a new BufferedWritev from a os.File
-func NewBufferedWritevFile(f *os.File) *BufferedWritev {
-	return NewBufferedWritevFD(uintptr(f.Fd()))
-}
-
-// Make a new BufferedWritev from a file descriptor (FD)
-func NewBufferedWritevFD(fd uintptr) *BufferedWritev {
-	// refactor: make buffer size user-specified?
-	return &BufferedWritev{buf: make([]syscall.Iovec, 0, defaultBufSize), lock: new(sync.Mutex), fd: fd}
 }
 
 // this implements the io.Writer interface
