@@ -18,9 +18,10 @@ func TestWritevRaw(t *testing.T) {
 	defer f.Close()
 
 	data := []byte("foobarbaz")
-	iovec := []syscall.Iovec{syscall.Iovec{&data[0], 3}, syscall.Iovec{&data[3], 3}, syscall.Iovec{&data[6], 3}}
+	data_desired := []byte("foobazbar")
+	iovec := []syscall.Iovec{syscall.Iovec{&data[0], 3}, syscall.Iovec{&data[6], 3}, syscall.Iovec{&data[3], 3}}
 
-	nw, err := WritevRaw(f, iovec)
+	nw, err := WritevRaw(uintptr(f.Fd()), iovec)
 	f.Seek(0, 0)
 	if err != nil {
 		t.Errorf("WritevRaw threw error: %s", err)
@@ -34,8 +35,8 @@ func TestWritevRaw(t *testing.T) {
 	if err != nil {
 		t.Errorf("can't read file back, %s", err)
 	}
-	if bytes.Compare(fromdisk, data) != 0 {
-		t.Errorf("contents of file don't match input, %s != %s, %d != %d", fromdisk, data, len(fromdisk), len(data))
+	if bytes.Compare(fromdisk, data_desired) != 0 {
+		t.Errorf("contents of file don't match input, %s != %s or %d != %d", fromdisk, data_desired, len(fromdisk), len(data_desired))
 	}
 	os.Remove("testwritevraw")
 }

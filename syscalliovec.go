@@ -14,13 +14,13 @@ func Writev(f *os.File, in [][]byte) (nw int, err error) {
 	for i, slice := range in {
 		iovec[i] = syscall.Iovec{&slice[0], uint64(len(slice))}
 	}
-	nw, err = WritevRaw(f, iovec)
+	nw, err = WritevRaw(uintptr(f.Fd()), iovec)
 	return
 }
 
 // Call writev syscall, given a slice of syscall.Iovec to write
-func WritevRaw(f *os.File, iovec []syscall.Iovec) (nw int, err error) {
-	nw_raw, _, errno := syscall.Syscall(syscall.SYS_WRITEV, uintptr(f.Fd()), uintptr(unsafe.Pointer(&iovec[0])), uintptr(len(iovec)))
+func WritevRaw(fd uintptr, iovec []syscall.Iovec) (nw int, err error) {
+	nw_raw, _, errno := syscall.Syscall(syscall.SYS_WRITEV, fd, uintptr(unsafe.Pointer(&iovec[0])), uintptr(len(iovec)))
 	nw = int(nw_raw)
 	if errno != 0 {
 		err = errors.New(fmt.Sprintf("writev failed with error: %d", errno))
