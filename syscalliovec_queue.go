@@ -18,7 +18,7 @@ const defaultBufSize = 1024
 // after all data has been written, the client should call Flush to make sure everything is written
 type BufferedWritev struct {
 	buf  []syscall.Iovec
-	lock *sync.Mutex
+	Lock *sync.Mutex
 	fd   uintptr
 }
 
@@ -36,7 +36,7 @@ func NewBufferedWritev(target_in interface{}) (bw *BufferedWritev, err error) {
 		bw, err = NewBufferedWritev(uintptr(target.Fd()))
 	case uintptr:
 		// refactor: make buffer size user-specified?
-		bw = &BufferedWritev{buf: make([]syscall.Iovec, 0, defaultBufSize), lock: new(sync.Mutex), fd: target}
+		bw = &BufferedWritev{buf: make([]syscall.Iovec, 0, defaultBufSize), Lock: new(sync.Mutex), fd: target}
 	default:
 		err = errors.New("NewBufferedWritev called with invalid type")
 	}
@@ -51,7 +51,7 @@ func (bw *BufferedWritev) Write(p []byte) (n int, err error) {
 }
 
 func (bw *BufferedWritev) WriteIovec(iov syscall.Iovec) (err error) {
-	bw.lock.Lock()
+	//bw.lock.Lock()
 	// normally append will reallocate a slice if it exceeds its cap, but that should not happen here because of our logic below
 	bw.buf = append(bw.buf, iov)
 
@@ -60,7 +60,7 @@ func (bw *BufferedWritev) WriteIovec(iov syscall.Iovec) (err error) {
 		err = bw.flush()
 	}
 
-	bw.lock.Unlock()
+	//bw.lock.Unlock()
 	return
 }
 
