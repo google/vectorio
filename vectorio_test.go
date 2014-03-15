@@ -1,7 +1,8 @@
-package vectorio
+package vectorio_test
 
 import (
 	"bytes"
+	"github.com/tedb/vectorio"
 	"io/ioutil"
 	"net"
 	"os"
@@ -21,7 +22,7 @@ func TestWritevRaw(t *testing.T) {
 	data_desired := []byte("foobazbar")
 	iovec := []syscall.Iovec{syscall.Iovec{&data[0], 3}, syscall.Iovec{&data[6], 3}, syscall.Iovec{&data[3], 3}}
 
-	nw, err := WritevRaw(uintptr(f.Fd()), iovec)
+	nw, err := vectorio.WritevRaw(uintptr(f.Fd()), iovec)
 	f.Seek(0, 0)
 	if err != nil {
 		t.Errorf("WritevRaw threw error: %s", err)
@@ -50,7 +51,7 @@ func TestWritev(t *testing.T) {
 
 	data := [][]byte{[]byte("foo"), []byte("bar"), []byte("baz")}
 
-	nw, err := Writev(f, data)
+	nw, err := vectorio.Writev(f, data)
 	f.Seek(0, 0)
 	if err != nil {
 		t.Errorf("WritevRaw threw error: %s", err)
@@ -114,7 +115,7 @@ func TestWritevSocket(t *testing.T) {
 		t.Errorf("could not get file handle for TCP client: %s", err)
 	}
 	defer f.Close()
-	nw, err := Writev(f, data)
+	nw, err := vectorio.Writev(f, data)
 	f.Seek(0, 0)
 	if err != nil {
 		t.Errorf("WritevRaw threw error: %s", err)

@@ -24,18 +24,21 @@ func TestBufferedWritev(t *testing.T) {
 	bw.WriteIovec(syscall.Iovec{&data[6], 3})
 	bw.Write(data[3:6])
 
-	err = bw.Flush()
+	nw, err := bw.Flush()
 	if err != nil {
 		t.Errorf("Flush threw error: %s", err)
+	}
+	if nw != 3*3 {
+		t.Errorf("Flush wrote wrong number of bytes, expected 3 * 3 but got", nw)
 	}
 
 	stats, err := f.Stat()
 	if err != nil {
 		t.Errorf("Stat threw error: %s", err)
 	}
-	nw := stats.Size()
-	if nw != int64(len(data)) {
-		t.Errorf("Length %d of input does not match %d written bytes", len(data), nw)
+	filesize := stats.Size()
+	if filesize != int64(len(data)) {
+		t.Errorf("Length %d of input does not match %d written bytes", len(data), filesize)
 	}
 
 	f.Seek(0, 0)
@@ -67,7 +70,7 @@ func TestBufferedWritevHuge(t *testing.T) {
 	}
 	bw.Write(final)
 
-	err = bw.Flush()
+	_, err = bw.Flush()
 	if err != nil {
 		t.Errorf("Flush threw error: %s", err)
 	}
@@ -76,9 +79,9 @@ func TestBufferedWritevHuge(t *testing.T) {
 	if err != nil {
 		t.Errorf("Stat threw error: %s", err)
 	}
-	nw := stats.Size()
-	if nw != int64(1024*len(data)+len(final)) {
-		t.Errorf("Length %d of input does not match %d written bytes", len(data), nw)
+	filesize := stats.Size()
+	if filesize != int64(1024*len(data)+len(final)) {
+		t.Errorf("Length %d of input does not match %d written bytes", len(data), filesize)
 	}
 
 	// Maybe make this validate file contents later??

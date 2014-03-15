@@ -43,21 +43,21 @@ func NewBufferedWritev(target_in interface{}) (bw *BufferedWritev, err error) {
 	return
 }
 
-// this implements the io.Writer interface
-// except we always return 0 bytes, which should be ignored
-func (bw *BufferedWritev) Write(p []byte) (n int, err error) {
-	err = bw.WriteIovec(syscall.Iovec{&p[0], uint64(len(p))})
+// Implements the io.Writer interface.
+// Number of bytes written (nw) is usually 0 except for the times we flush the buffer, which will reflect the quantity of all bytes written in that writev() call
+func (bw *BufferedWritev) Write(p []byte) (nw int, err error) {
+	nw, err = bw.WriteIovec(syscall.Iovec{&p[0], uint64(len(p))})
 	return
 }
 
-func (bw *BufferedWritev) WriteIovec(iov syscall.Iovec) (err error) {
+func (bw *BufferedWritev) WriteIovec(iov syscall.Iovec) (nw int, err error) {
 	//bw.lock.Lock()
 	// normally append will reallocate a slice if it exceeds its cap, but that should not happen here because of our logic below
 	bw.buf = append(bw.buf, iov)
 
 	if len(bw.buf) == cap(bw.buf) {
 		// maxed out the slice; write it and reset the slice
-		err = bw.flush()
+		nw, err = bw.flush()
 	}
 
 	//bw.lock.Unlock()
@@ -65,17 +65,18 @@ func (bw *BufferedWritev) WriteIovec(iov syscall.Iovec) (err error) {
 }
 
 // public interface; wraps flush() in a lock
-func (bw *BufferedWritev) Flush() (err error) {
+// TODO: if we're not going to use a lock, collapse Flush() and flush()
+func (bw *BufferedWritev) Flush() (nw int, err error) {
 	//bw.Lock.Lock()
-	err = bw.flush()
+	nw, err = bw.flush()
 	//bw.Lock.Unlock()
 	return
 }
 
 // FUTURE: check to make sure the number of bytes written matches the sum of the iovec's
 // Note: must be wrapped in a mutex to be concurrency safe
-func (bw *BufferedWritev) flush() (err error) {
-	_, err = WritevRaw(bw.fd, bw.buf)
+func (bw *BufferedWritev) flush() (nw int, err error) {
+	nw, err = WritevRaw(bw.fd, bw.buf)
 	bw.buf = bw.buf[:0]
 	return
 }
