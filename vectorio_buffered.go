@@ -14,8 +14,9 @@ const defaultBufSize = 1024
 // just an alias so users don't have to import syscall to use this
 //type Iovec syscall.Iovec
 
-// BufferedWritev is similar to bufio.Writer
-// after all data has been written, the client should call Flush to make sure everything is written
+// BufferedWritev is similar to bufio.Writer.
+// after all data has been written, the client should call Flush to make sure everything is written.
+// Note: this is NOT concurrency safe.  Concurrent access should use the embedded Lock object (w.Lock.Lock() / w.Lock.Unlock()), or wrap this in a single goroutine that handles a channel of []byte.
 type BufferedWritev struct {
 	buf  []syscall.Iovec
 	Lock *sync.Mutex
