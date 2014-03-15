@@ -1,4 +1,4 @@
-package syscalliovec
+package vectorio
 
 import (
 	"errors"
