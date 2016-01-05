@@ -5,6 +5,8 @@ vectorio is a library for Go (aka "golang") to implement the writev(2), and in t
 
 This is not an official Google product.  Authored by Ted Behling as a personal project.
 
+[![Build Status](https://travis-ci.org/google/vectorio.svg)](https://travis-ci.org/google/vectorio)
+
 Example
 ---
 
