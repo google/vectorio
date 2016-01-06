@@ -18,13 +18,14 @@ package vectorio_test
 
 import (
 	"bytes"
-	"github.com/tedb/vectorio"
 	"io/ioutil"
 	"net"
 	"os"
 	"syscall"
 	"testing"
 	"time"
+
+	"github.com/google/vectorio"
 )
 
 func TestWritevRaw(t *testing.T) {

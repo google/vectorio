@@ -18,9 +18,10 @@ package vectorio_test
 
 import (
 	"fmt"
-	"github.com/tedb/vectorio"
 	"io/ioutil"
 	"syscall"
+
+	"github.com/google/vectorio"
 )
 
 func ExampleBufferedVectorio() {

@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package vectorio
+package vectorio_test
 
 import (
 	"bytes"
@@ -22,6 +22,8 @@ import (
 	"os"
 	"syscall"
 	"testing"
+
+	"github.com/google/vectorio"
 )
 
 func TestBufferedWritev(t *testing.T) {
@@ -34,7 +36,7 @@ func TestBufferedWritev(t *testing.T) {
 	data := []byte("foobarbaz")
 	data_desired := []byte("foobazbar")
 
-	bw, _ := NewBufferedWritev(f)
+	bw, _ := vectorio.NewBufferedWritev(f)
 
 	bw.WriteIovec(syscall.Iovec{&data[0], 3})
 	bw.WriteIovec(syscall.Iovec{&data[6], 3})
@@ -78,7 +80,7 @@ func TestBufferedWritevHuge(t *testing.T) {
 	data := []byte("foobarba")
 	final := []byte("attheend")
 
-	bw, _ := NewBufferedWritev(f)
+	bw, _ := vectorio.NewBufferedWritev(f)
 
 	// write a little more than our buffer size
 	for i := 0; i < 1024; i++ {
