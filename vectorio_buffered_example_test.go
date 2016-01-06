@@ -41,7 +41,7 @@ func ExampleBufferedVectorio() {
 	nw, err = w.Flush()
 
 	if err != nil {
-		fmt.Println("Flush threw error: %s", err)
+		fmt.Printf("Flush threw error: %s", err)
 	}
 	if nw == 9*2 {
 		fmt.Println("Wrote", nw, "bytes to file!")

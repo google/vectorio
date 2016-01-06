@@ -75,7 +75,7 @@ func TestWritev(t *testing.T) {
 	}
 
 	if nw != 9 {
-		t.Errorf("Length %d of input does not match %d written bytes", len(data), nw)
+		t.Errorf("Length %d of input does not match %d written bytes", 9, nw)
 	}
 
 	fromdisk, err := ioutil.ReadAll(f)

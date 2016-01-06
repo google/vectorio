@@ -47,7 +47,7 @@ func TestBufferedWritev(t *testing.T) {
 		t.Errorf("Flush threw error: %s", err)
 	}
 	if nw != 3*3 {
-		t.Errorf("Flush wrote wrong number of bytes, expected 3 * 3 but got", nw)
+		t.Errorf("Flush wrote wrong number of bytes, expected 3 * 3 but got %d", nw)
 	}
 
 	stats, err := f.Stat()
