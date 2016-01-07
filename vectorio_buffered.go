@@ -32,16 +32,17 @@ const defaultBufSize = 1024
 
 // BufferedWritev is similar to bufio.Writer.
 // after all data has been written, the client should call Flush to make sure everything is written.
-// Note: this is NOT concurrency safe.  Concurrent access should use the embedded Lock object (w.Lock.Lock() / w.Lock.Unlock()), or wrap this in a single goroutine that handles a channel of []byte.
+// Note: this is NOT concurrency safe.  Concurrent access should use the embedded Lock object (w.Lock.Lock() /
+// w.Lock.Unlock()), or wrap this in a single goroutine that handles a channel of []byte.
 type BufferedWritev struct {
 	buf  []syscall.Iovec
 	Lock *sync.Mutex
 	fd   uintptr
 }
 
-// Make a new BufferedWritev from a net.TCPConn, os.File, or file descriptor (FD).
-func NewBufferedWritev(target_in interface{}) (bw *BufferedWritev, err error) {
-	switch target := target_in.(type) {
+// NewBufferedWritev makes a new BufferedWritev from a net.TCPConn, os.File, or file descriptor (FD).
+func NewBufferedWritev(targetIn interface{}) (bw *BufferedWritev, err error) {
+	switch target := targetIn.(type) {
 	case *net.TCPConn:
 		var f *os.File
 		f, err = target.File()
@@ -60,13 +61,14 @@ func NewBufferedWritev(target_in interface{}) (bw *BufferedWritev, err error) {
 	return
 }
 
-// Implements the io.Writer interface.
+// Write implements the io.Writer interface.
 // Number of bytes written (nw) is usually 0 except for the times we flush the buffer, which will reflect the quantity of all bytes written in that writev() call
 func (bw *BufferedWritev) Write(p []byte) (nw int, err error) {
 	nw, err = bw.WriteIovec(syscall.Iovec{&p[0], uint64(len(p))})
 	return
 }
 
+// WriteIovec takes a user-composed syscall.Iovec struct instead of []byte; functionally the same as Write
 func (bw *BufferedWritev) WriteIovec(iov syscall.Iovec) (nw int, err error) {
 	//bw.lock.Lock()
 	// normally append will reallocate a slice if it exceeds its cap, but that should not happen here because of our logic below
@@ -81,9 +83,10 @@ func (bw *BufferedWritev) WriteIovec(iov syscall.Iovec) (nw int, err error) {
 	return
 }
 
-// public interface; wraps flush() in a lock
-// TODO: if we're not going to use a lock, collapse Flush() and flush()
+// Flush writes the contents of buffer to underlying file handle and resets buffer.
+// This must be called at the end of writing before closing the underlying file, or data will be lost.
 func (bw *BufferedWritev) Flush() (nw int, err error) {
+	// TODO: if we're not going to use a lock, collapse Flush() and flush()
 	//bw.Lock.Lock()
 	nw, err = bw.flush()
 	//bw.Lock.Unlock()

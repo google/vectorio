@@ -1,4 +1,4 @@
-package main
+package vectorio_test
 
 import (
 	"fmt"
@@ -8,7 +8,7 @@ import (
 	"github.com/google/vectorio"
 )
 
-func main() {
+func ExampleVectorioCombined() {
 	// Create a temp file for demo purposes
 	f, err := ioutil.TempFile("", "vectorio")
 	if err != nil {
@@ -59,5 +59,7 @@ func main() {
 		panic(err)
 	}
 
-	fmt.Println("Wrote", nw1+nw2, "bytes to file", f.Name())
+	fmt.Println("Wrote", nw1+nw2, "bytes to file")
+	// Output:
+	// Wrote 60 bytes to file
 }
