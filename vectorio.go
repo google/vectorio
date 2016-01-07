@@ -17,7 +17,6 @@ limitations under the License.
 package vectorio
 
 import (
-	"errors"
 	"fmt"
 	"os"
 	"syscall"
