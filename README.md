@@ -7,5 +7,5 @@ This is not an official Google product.  Authored by Ted Behling as a personal p
 
 [![Build Status](https://travis-ci.org/google/vectorio.svg)](https://travis-ci.org/google/vectorio)
 
-See [example usage](vectorio_example.go) for a demo.
+See [example usage](vectorio_example_test.go) for a demo.
 
