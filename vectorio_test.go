@@ -24,6 +24,7 @@ import (
 	"syscall"
 	"testing"
 	"time"
+	"unsafe"
 
 	"github.com/google/vectorio"
 )
@@ -35,9 +36,18 @@ func TestWritevRaw(t *testing.T) {
 	}
 	defer f.Close()
 
-	data := []byte("foobarbaz")
-	data_desired := []byte("foobazbar")
-	iovec := []syscall.Iovec{syscall.Iovec{&data[0], 3}, syscall.Iovec{&data[6], 3}, syscall.Iovec{&data[3], 3}}
+	data := [][]byte{[]byte("foo"), []byte("bar"), []byte("baz")}
+	iovec := []syscall.Iovec{
+		syscall.Iovec{Base:(*byte)(unsafe.Pointer(&data[0][0])), Len:uint64(len(data[0]))},
+		syscall.Iovec{Base:(*byte)(unsafe.Pointer(&data[1][0])), Len:uint64(len(data[1]))},
+		syscall.Iovec{Base:(*byte)(unsafe.Pointer(&data[2][0])), Len:uint64(len(data[2]))}}
+
+	iov := make([]syscall.Iovec, len(data))
+	expected := 0
+	for i := range data {
+		expected += len(data[i])
+		iov[i].Len = uint64(len(data[i]))
+	}
 
 	nw, err := vectorio.WritevRaw(uintptr(f.Fd()), iovec)
 	f.Seek(0, 0)
@@ -45,17 +55,28 @@ func TestWritevRaw(t *testing.T) {
 		t.Errorf("WritevRaw threw error: %s", err)
 	}
 
-	if nw != len(data) {
-		t.Errorf("Length %d of input does not match %d written bytes", len(data), nw)
+	if nw != expected {
+		t.Errorf("Length %d of input does not match %d written bytes", expected, nw)
 	}
 
-	fromdisk, err := ioutil.ReadAll(f)
+	sz, err := vectorio.ReadvRaw(uintptr(f.Fd()), iov)
 	if err != nil {
-		t.Errorf("can't read file back, %s", err)
+		t.Errorf("read returned error %s", err.Error())
 	}
-	if bytes.Compare(fromdisk, data_desired) != 0 {
-		t.Errorf("contents of file don't match input, %s != %s or %d != %d", fromdisk, data_desired, len(fromdisk), len(data_desired))
+
+	if sz != expected {
+		t.Errorf("read was wrong length: %d != %d", sz, expected)
 	}
+
+	for i := range data {
+		b := *(*[]byte)(unsafe.Pointer(&iov[i].Base))
+		if bytes.Compare(data[i], b) != 0 {
+			t.Errorf("read got wrong data: %s != %s", data[i], b)
+		} else {
+			t.Logf("read got correct data: %s == %s", data[i], b)
+		}
+	}
+
 	os.Remove("testwritevraw")
 }
 
@@ -90,6 +111,8 @@ func TestWritev(t *testing.T) {
 }
 
 func TestWritevSocket(t *testing.T) {
+	data := [][]byte{[]byte("foo"), []byte("bar"), []byte("baz")}
+
 	go func() {
 		ln, err := net.Listen("tcp", "127.0.0.1:9999")
 		if err != nil {
@@ -102,17 +125,31 @@ func TestWritevSocket(t *testing.T) {
 		}
 		defer conn.Close()
 
-		buf := make([]byte, 9)
-		nr, err := conn.Read(buf)
-		if nr != len(buf) {
-			t.Errorf("read was wrong length: %d != %d", nr, len(buf))
+		iov := make([]syscall.Iovec, len(data))
+
+		expected := 0
+		for i := range data {
+			expected += len(data[i])
+			iov[i].Len = uint64(len(data[i]))
 		}
 
-		good := []byte("foobarbaz")
-		if bytes.Compare(buf, good) != 0 {
-			t.Errorf("read got wrong data: %s != %s", buf, good)
-		} else {
-			t.Logf("read got correct data: %s == %s", buf, good)
+		f, _ := conn.(*net.TCPConn).File()
+		sz, err := vectorio.ReadvRaw(f.Fd(), iov)
+		if err != nil {
+			t.Errorf("read returned error %s", err.Error())
+		}
+
+		if sz != expected {
+			t.Errorf("read was wrong length: %d != %d", sz, expected)
+		}
+
+		for i := range data {
+			b := *(*[]byte)(unsafe.Pointer(&iov[i].Base))
+			if bytes.Compare(data[i], b) != 0 {
+				t.Errorf("read got wrong data: %s != %s", data[i], b)
+			} else {
+				t.Logf("read got correct data: %s == %s", data[i], b)
+			}
 		}
 	}()
 
@@ -125,7 +162,6 @@ func TestWritevSocket(t *testing.T) {
 		t.Logf("connected to server")
 	}
 	defer conn.Close()
-	data := [][]byte{[]byte("foo"), []byte("bar"), []byte("baz")}
 
 	f, err := conn.File()
 	if err != nil {

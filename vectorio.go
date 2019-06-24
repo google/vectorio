@@ -42,3 +42,21 @@ func WritevRaw(fd uintptr, iovec []syscall.Iovec) (nw int, err error) {
 	}
 	return
 }
+
+// ReadvRaw calls the readv() syscall. The passed in iovec variable must be initialized
+// to the expected number of Iovecs,  Len of each Iovec must be set,
+// and the Base of each Iovec will be allocated if it is nil
+func ReadvRaw(fd uintptr, iovec []syscall.Iovec) (num int, err error) {
+	for i := range iovec {
+		if iovec[i].Base == nil {
+			base := make([]byte, iovec[i].Len)
+			iovec[i].Base = &base[0]
+		}
+	}
+	nrRaw, _, errno := syscall.Syscall(syscall.SYS_READV, fd, uintptr(unsafe.Pointer(&iovec[0])), uintptr(len(iovec)))
+	num = int(nrRaw)
+	if errno != 0 {
+		err = fmt.Errorf("readv failed with error: %s", errno.Error())
+	}
+	return
+}
